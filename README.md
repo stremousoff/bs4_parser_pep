@@ -1,7 +1,7 @@
-**Проект Парсера Python**
+**Парсинг. Python.**
 =========================
 
-Парсер для парсинга документации Python и извлечения информации о последних версиях, статьях "Что нового", загрузке документации и статусах PEP (Python Enhancement Proposal).
+Парсер для документации Python и извлечения информации о последних версиях, статьях "Что нового", загрузке документации и статусах PEP (Python Enhancement Proposal).
 
 **Возможности**
 ------------
@@ -17,6 +17,7 @@
 * BeautifulSoup
 * requests_cache
 * tqdm
+* CSV
 
 **Установка**
 ------------
@@ -41,7 +42,20 @@ pip install -r requirements.txt
 
 Запустить парсер из командной строки с желаемыми параметрами:
 ```bash
-python src/main.py [-h] [-c] [-o {pretty,file}] {whats-new,latest-versions,download,pep}
+usage: main.py [-h] [-c] [-o {pretty,file}]
+               {whats-new,latest-versions,download,pep}
+
+Парсер документации Python
+
+positional arguments:
+  {whats-new,latest-versions,download}
+                        Режимы работы парсера
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c, --clear-cache     Очистка кеша
+  -o {pretty,file}, --output {pretty,file}
+                        Дополнительные способы вывода данных
 ```
 **Автор**
 --------
