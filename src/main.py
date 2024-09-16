@@ -8,8 +8,7 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (MAIN_DOC_URL, BASE_DIR, STATUS_INDEX, PEP_MAIN_URL,
-                       LINK_INDEX, EXPECTED_STATUS)
+from constants import MAIN_DOC_URL, BASE_DIR, PEP_MAIN_URL, EXPECTED_STATUS
 from outputs import control_output
 from utils import get_response, find_tag
 
@@ -22,7 +21,8 @@ def whats_new(session):
     soup = BeautifulSoup(response.text, features='lxml')
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all('li',
+                                              attrs={'class': 'toctree-l1'})
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
@@ -91,38 +91,40 @@ def download(session):
 
 
 def pep(session):
-    response = session.get(PEP_MAIN_URL)
-    soup = BeautifulSoup(response.text, 'lxml')
-    tables = soup.select('table.pep-zero-table')
-    data = []
-    for table in tables:
-        rows = table.select('tr')
-        for row in rows[1:]:  # пропускаем заголовок таблицы
-            cols = row.select('td')
-            status = cols[STATUS_INDEX].text
-            link = urljoin(PEP_MAIN_URL,
-                           cols[LINK_INDEX].select_one('a')['href'])
-            data.append((status[1:], link))
-    pep_statuses = defaultdict(int)
-    mismatches = []
-    for status, link in tqdm(set(data)):
-        response = session.get(link)
+    try:
+        response = session.get(PEP_MAIN_URL)
         soup = BeautifulSoup(response.text, 'lxml')
-        page_status = soup.select_one('#pep-content > dl abbr').text
-        if page_status not in EXPECTED_STATUS[status]:
-            mismatches.append(
-                f'Несовпадающие статусы: {link} Статус в карточке: '
-                f'{page_status} Ожидаемые статусы: {EXPECTED_STATUS[status]}'
-            )
-            continue
-        pep_statuses[page_status] += 1
-    if mismatches:
-        logging.info('\n'.join(mismatches))
-    return [
-        ('Status', 'Count'),
-        *sorted(pep_statuses.items()),
-        ('Total:', sum(pep_statuses.values())),
-    ]
+        rows = soup.select(
+            f'section#numerical-index '
+            f'.pep-zero-table.docutils.align-default '
+            f'tr'
+        )
+        result = defaultdict(int)
+        mismatches = []
+        for row in tqdm(rows[1:]):
+            status = row.select_one('abbr').text[1:]
+            url = urljoin(PEP_MAIN_URL, row.select_one('a').get('href'))
+            response = session.get(url)
+            soup = BeautifulSoup(response.text, 'lxml')
+            page_status = soup.select_one('#pep-content > dl abbr').text
+            if page_status not in EXPECTED_STATUS[status]:
+                mismatches.append(
+                    f'Несовпадающие статусы: {url} Статус в карточке: '
+                    f'{page_status} Ожидаемый статус: '
+                    f'{EXPECTED_STATUS[status]}'
+                )
+                continue
+            result[page_status] += 1
+        if mismatches:
+            logging.info('\n'.join(mismatches))
+        return [
+            ('Status', 'Count'),
+            *sorted(result.items()),
+            ('Total:', sum(result.values())),
+        ]
+    except Exception as error:
+        logging.exception(error)
+        return None
 
 
 MODE_TO_FUNCTION = {
