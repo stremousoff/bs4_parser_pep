@@ -95,9 +95,9 @@ def pep(session):
         response = session.get(PEP_MAIN_URL)
         soup = BeautifulSoup(response.text, 'lxml')
         rows = soup.select(
-            f'section#numerical-index '
-            f'.pep-zero-table.docutils.align-default '
-            f'tr'
+            'section#numerical-index '
+            '.pep-zero-table.docutils.align-default '
+            'tr'
         )
         result = defaultdict(int)
         mismatches = []
