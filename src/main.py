@@ -10,25 +10,31 @@ from configs import configure_argument_parser, configure_logging
 from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEP_MAIN_URL,
                        Literals, PathConstants)
 from outputs import control_output
-from utils import find_tag, make_soup
+from utils import check_exceptions, find_tag, make_soup
 
 
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
+    exceptions = []
     for version_a_tag in tqdm(
         make_soup(session, whats_new_url).select(
             '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 > a'
         )[:-1]
     ):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
-        soup = make_soup(session, version_link)
+        try:
+            soup = make_soup(session, version_link)
+        except (ConnectionError, TypeError) as error:
+            exceptions.append(error)
+            continue
         results.append(
             (
                 version_link,
                 find_tag(soup, 'h1').text.replace('¶', ''),
                 find_tag(soup, 'dl').text.replace('\n', ' '))
         )
+    check_exceptions(exceptions)
     return results
 
 
@@ -78,14 +84,14 @@ def pep(session):
         'tr'
     )
     result = defaultdict(int)
-    mismatches = []
+    mismatches, exceptions = [], []
     for row in tqdm(rows[1:]):
         status = row.select_one('abbr').text[1:]
         url = urljoin(PEP_MAIN_URL, row.select_one('a').get('href'))
         try:
             soup = make_soup(session, url)
-        except TypeError as error:
-            logging.error(Literals.URL_PEP_NOT_FOUND.format(url, error))
+        except (ConnectionError, TypeError) as error:
+            exceptions.append(error)
             continue
         page_status = soup.select_one('#pep-content > dl abbr').text
         if page_status not in EXPECTED_STATUS[status]:
@@ -98,6 +104,7 @@ def pep(session):
         result[page_status] += 1
     if mismatches:
         logging.info('\n'.join(mismatches))
+    check_exceptions(exceptions)
     return [
         ('Status', 'Count'),
         *sorted(result.items()),

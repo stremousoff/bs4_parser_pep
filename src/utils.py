@@ -1,3 +1,5 @@
+import logging
+
 from bs4 import BeautifulSoup
 from requests import RequestException
 
@@ -27,3 +29,7 @@ def find_tag(soup, tag, attrs=None):
 
 def make_soup(session, url, features='lxml'):
     return BeautifulSoup(get_response(session, url).text, features)
+
+
+def check_exceptions(exceptions):
+    list(map(lambda exception: logging.error(exception), exceptions))
