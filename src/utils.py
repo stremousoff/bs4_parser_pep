@@ -1,24 +1,17 @@
-import logging
-from http import HTTPStatus
-
 from bs4 import BeautifulSoup
 from requests import RequestException
 
 from constants import Literals
-from exceptions import ConnectionErrorException, ParserFindTagException
+from exceptions import ParserFindTagException
 
 
 def get_response(session, url, encoding='utf-8'):
     try:
         response = session.get(url)
         response.encoding = encoding
-        if response.status_code != HTTPStatus.OK:
-            logging.info(
-                Literals.HTTP_RESPONSE_ERROR.format(url, response.status_code)
-            )
         return response
     except RequestException as error:
-        raise ConnectionErrorException(
+        raise ConnectionError(
             Literals.CONNECTION_ERROR.format(url, error)
         )
 

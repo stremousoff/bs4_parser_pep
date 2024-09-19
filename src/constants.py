@@ -32,6 +32,7 @@ class PathConstants:
 
 
 class Literals:
+    URL_PEP_NOT_FOUND = None
     CONNECTION_ERROR = 'Возникла ошибка при загрузке страницы {}: {}.'
     TAG_NOT_FIND_ERROR = 'Не найден тег {} {}.'
     FILE_SAVED = 'Файл с результатами был сохранён {}/{}.'

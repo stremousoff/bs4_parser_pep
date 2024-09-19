@@ -15,13 +15,12 @@ from utils import find_tag, make_soup
 
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    soup = make_soup(session, whats_new_url)
-    sections_by_python = soup.select(
-        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1'
-    )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
-    for section in tqdm(sections_by_python[:-1]):
-        version_a_tag = section.find('a')
+    for version_a_tag in tqdm(
+        make_soup(session, whats_new_url).select(
+            '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 > a'
+        )[:-1]
+    ):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         soup = make_soup(session, version_link)
         results.append(
@@ -56,11 +55,10 @@ def latest_versions(session):
 
 
 def download(session):
-    soup = make_soup(session, urljoin(MAIN_DOC_URL, 'download.html'))
-    main_tag = find_tag(soup, 'div', {'role': 'main'})
-    table_tag = main_tag.find('table', {'class': 'docutils'})
-    pdf_a4_tag = table_tag.find('a', {'href': re.compile(r'.+pdf-a4\.zip$')})
-    pdf_a4_link = pdf_a4_tag['href']
+    pdf_a4_link = make_soup(
+        session,
+        urljoin(MAIN_DOC_URL, 'download.html')
+    ).select_one('div.body > table.docutils a[href$="pdf-a4.zip"]')['href']
     archive_url = urljoin(MAIN_DOC_URL, pdf_a4_link)
     filename = archive_url.split('/')[-1]
     downloads_dir = BASE_DIR / PathConstants.DOWNLOADS_DIR
@@ -84,7 +82,11 @@ def pep(session):
     for row in tqdm(rows[1:]):
         status = row.select_one('abbr').text[1:]
         url = urljoin(PEP_MAIN_URL, row.select_one('a').get('href'))
-        soup = make_soup(session, url)
+        try:
+            soup = make_soup(session, url)
+        except TypeError as error:
+            logging.error(Literals.URL_PEP_NOT_FOUND.format(url, error))
+            continue
         page_status = soup.select_one('#pep-content > dl abbr').text
         if page_status not in EXPECTED_STATUS[status]:
             mismatches.append(
