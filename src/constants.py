@@ -31,7 +31,6 @@ class PathConstants:
     NAME_PARSER_FILE = 'parser.log'
 
 
-
 class Literals:
     CONNECTION_ERROR = 'Возникла ошибка при загрузке страницы {}: {}.'
     TAG_NOT_FIND_ERROR = 'Не найден тег {} {}.'
