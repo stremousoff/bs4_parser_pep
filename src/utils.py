@@ -31,5 +31,5 @@ def make_soup(session, url, features='lxml'):
     return BeautifulSoup(get_response(session, url).text, features)
 
 
-def check_exceptions(exceptions):
-    list(map(lambda exception: logging.error(exception), exceptions))
+def check_exceptions(exceptions, logger=logging.error):
+    list(map(logger, exceptions))

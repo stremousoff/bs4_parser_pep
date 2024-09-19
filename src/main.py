@@ -25,8 +25,10 @@ def whats_new(session):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         try:
             soup = make_soup(session, version_link)
-        except (ConnectionError, TypeError) as error:
-            exceptions.append(error)
+        except ConnectionError as error:
+            exceptions.append(
+                Literals.CONNECTION_ERROR.format(version_link, error)
+            )
             continue
         results.append(
             (
@@ -90,8 +92,8 @@ def pep(session):
         url = urljoin(PEP_MAIN_URL, row.select_one('a').get('href'))
         try:
             soup = make_soup(session, url)
-        except (ConnectionError, TypeError) as error:
-            exceptions.append(error)
+        except ConnectionError as error:
+            exceptions.append(Literals.CONNECTION_ERROR.format(url, error))
             continue
         page_status = soup.select_one('#pep-content > dl abbr').text
         if page_status not in EXPECTED_STATUS[status]:
